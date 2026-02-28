@@ -1,0 +1,16 @@
+{
+  "run_id": "run_fail_1772263187142",
+  "segment_id": "seg_det_001",
+  "step_id": "step_02_fail",
+  "competitor": "example",
+  "flow_name": "signup_onboarding",
+  "action": "wait_for",
+  "url": "https://example.com/",
+  "dom_snapshot_ref": "evidence/runs/run_fail_1772263187142/dom/step_02_fail__failure.html",
+  "screenshot_ref": "evidence/runs/run_fail_1772263187142/screenshots/step_02_fail__failure.png",
+  "timestamp": "2026-02-28T07:19:49.257Z",
+  "status": "failed_with_bundle",
+  "assistance_mode": "deterministic",
+  "error_message": "page.waitForSelector: Timeout 1000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#definitely-not-exists') to be visible\u001b[22m\n",
+  "failure_bundle_ref": "evidence/runs/run_fail_1772263187142/failure_bundles/seg_det_001__step_02_fail.json"
+}

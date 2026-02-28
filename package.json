@@ -1,0 +1,15 @@
+{
+  "name": "comp-research-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Competitor evidence capture runner/store baseline (M1/M2)",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/atomicArtifactWriter.test.js && node test/evidenceStore.test.js",
+    "run:flow": "node scripts/run-flow.js",
+    "search": "node scripts/search-artifacts.js"
+  },
+  "dependencies": {
+    "playwright": "^1.52.0"
+  }
+}

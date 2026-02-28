@@ -1,0 +1,15 @@
+{
+  "run_id": "run_fail_1772263187142",
+  "segment_id": "seg_det_001",
+  "step_id": "step_01_open",
+  "competitor": "example",
+  "flow_name": "signup_onboarding",
+  "action": "goto:https://example.com",
+  "url": "https://example.com/",
+  "dom_snapshot_ref": "evidence/runs/run_fail_1772263187142/dom/step_01_open.html",
+  "screenshot_ref": "evidence/runs/run_fail_1772263187142/screenshots/step_01_open.png",
+  "timestamp": "2026-02-28T07:19:48.240Z",
+  "status": "success",
+  "assistance_mode": "deterministic",
+  "text_content_ref": "evidence/runs/run_fail_1772263187142/text/step_01_open.txt"
+}
