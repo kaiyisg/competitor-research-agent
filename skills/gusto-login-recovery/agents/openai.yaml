@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gusto Login Recovery"
+  short_description: "Recover stuck Gusto agent-browser login sessions"
+  default_prompt: "Recover the Gusto browser session using the project recovery command."

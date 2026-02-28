@@ -7,9 +7,17 @@
   "scripts": {
     "test": "node test/atomicArtifactWriter.test.js && node test/evidenceStore.test.js",
     "run:flow": "node scripts/run-flow.js",
-    "search": "node scripts/search-artifacts.js"
+    "search": "node scripts/search-artifacts.js",
+    "gusto:recover": "./scripts/login-gusto-agent-browser.sh",
+    "gusto:recover:payroll": "./scripts/login-gusto-agent-browser.sh https://app.gusto.com/company_onboarding/timelines/payroll",
+    "deputy:recover": "./scripts/login-deputy-agent-browser.sh",
+    "talenta:recover": "./scripts/login-talenta-agent-browser.sh",
+    "talenta:recover:dashboard": "./scripts/login-talenta-agent-browser.sh https://hr.talenta.co/employee/dashboard"
   },
   "dependencies": {
     "playwright": "^1.52.0"
+  },
+  "devDependencies": {
+    "agent-browser": "^0.15.1"
   }
 }

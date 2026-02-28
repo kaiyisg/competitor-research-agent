@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deputy Login Recovery"
+  short_description: "Recover stuck Deputy agent-browser login sessions"
+  default_prompt: "Recover the Deputy browser session using the project recovery command."
