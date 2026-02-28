@@ -26,7 +26,7 @@ DEPUTY_TENANT_BASE_URL="https://<tenant>.eu.deputy.com" npm run deputy:recover
 - `.env` exists with:
   - `DEPUTY_USERNAME`
   - `DEPUTY_PASSWORD`
-- `agent-browser` is available via `npx`.
+- `agent-browser` is available (prefer `./node_modules/.bin/agent-browser`, fallback `npx agent-browser`).
 
 ## What The Recovery Script Does
 

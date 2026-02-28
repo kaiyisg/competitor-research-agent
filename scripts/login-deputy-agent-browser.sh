@@ -5,6 +5,12 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 source "$ROOT_DIR/scripts/_agent-browser-env.sh"
 
+if [[ -x "$ROOT_DIR/node_modules/.bin/agent-browser" ]]; then
+  AGENT_BROWSER_CMD=("$ROOT_DIR/node_modules/.bin/agent-browser")
+else
+  AGENT_BROWSER_CMD=(npx agent-browser)
+fi
+
 if [[ ! -f ".env" ]]; then
   echo "Missing .env in $ROOT_DIR"
   exit 1
@@ -27,10 +33,10 @@ TARGET_URL="${1:-${TENANT_BASE_URL}/#/}"
 
 mkdir -p "$(dirname "$STATE_FILE")"
 
-npx agent-browser --session "$SESSION_NAME" close >/dev/null 2>&1 || true
-npx agent-browser --session "$SESSION_NAME" --headed open "$LOGIN_URL"
-npx agent-browser --session "$SESSION_NAME" wait 3000
-SNAPSHOT_JSON="$(npx agent-browser --session "$SESSION_NAME" snapshot -i --json)"
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" close >/dev/null 2>&1 || true
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" --headed open "$LOGIN_URL"
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" wait 3000
+SNAPSHOT_JSON="$("${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" snapshot -i --json)"
 read -r USER_REF PASS_REF SUBMIT_REF <<<"$(printf '%s' "$SNAPSHOT_JSON" | node -e '
   const fs = require("fs");
   const payload = JSON.parse(fs.readFileSync(0, "utf8"));
@@ -50,13 +56,13 @@ read -r USER_REF PASS_REF SUBMIT_REF <<<"$(printf '%s' "$SNAPSHOT_JSON" | node -
 ')"
 
 echo "Using refs: user=$USER_REF password=$PASS_REF submit=$SUBMIT_REF"
-npx agent-browser --session "$SESSION_NAME" fill "$USER_REF" "$DEPUTY_USERNAME"
-npx agent-browser --session "$SESSION_NAME" fill "$PASS_REF" "$DEPUTY_PASSWORD"
-npx agent-browser --session "$SESSION_NAME" click "$SUBMIT_REF"
-npx agent-browser --session "$SESSION_NAME" wait 8000
-npx agent-browser --session "$SESSION_NAME" state save "$STATE_FILE"
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" fill "$USER_REF" "$DEPUTY_USERNAME"
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" fill "$PASS_REF" "$DEPUTY_PASSWORD"
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" click "$SUBMIT_REF"
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" wait 8000
+"${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" state save "$STATE_FILE"
 
-CURRENT_URL="$(npx agent-browser --session "$SESSION_NAME" get url | tail -n 1)"
+CURRENT_URL="$("${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" get url | tail -n 1)"
 echo "Recovered session URL: $CURRENT_URL"
 
 if [[ "$CURRENT_URL" == *"accounts.google.com"* ]]; then
@@ -70,8 +76,8 @@ if [[ "$CURRENT_URL" == *"/my/login"* || "$CURRENT_URL" == *"/login?noredirecton
 fi
 
 if [[ -n "$TARGET_URL" ]]; then
-  npx agent-browser --session "$SESSION_NAME" open "$TARGET_URL"
-  npx agent-browser --session "$SESSION_NAME" wait 3000
-  TARGET_CURRENT_URL="$(npx agent-browser --session "$SESSION_NAME" get url | tail -n 1)"
+  "${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" open "$TARGET_URL"
+  "${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" wait 3000
+  TARGET_CURRENT_URL="$("${AGENT_BROWSER_CMD[@]}" --session "$SESSION_NAME" get url | tail -n 1)"
   echo "Opened target URL: $TARGET_CURRENT_URL"
 fi

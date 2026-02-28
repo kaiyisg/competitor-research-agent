@@ -26,12 +26,14 @@ TARGET_URL="${1:-https://hr.talenta.co/employee/dashboard}"
 
 mkdir -p "$(dirname "$STATE_FILE")"
 
+AB_FAST_TIMEOUT_MS="${AB_FAST_TIMEOUT_MS:-2000}"
+
 ab() {
   npx agent-browser --session "$SESSION_NAME" "$@"
 }
 
 try_ab() {
-  ab "$@" >/dev/null 2>&1
+  AGENT_BROWSER_DEFAULT_TIMEOUT="$AB_FAST_TIMEOUT_MS" ab "$@" >/dev/null 2>&1
 }
 
 fill_username() {
@@ -51,14 +53,30 @@ fill_password() {
 }
 
 submit_login() {
-  try_ab find role button click --name "Login" && return 0
-  try_ab find role button click --name "Log in" && return 0
-  try_ab find role button click --name "Sign in" && return 0
-  try_ab find role button click --name "Masuk" && return 0
-  try_ab find text "Login" click && return 0
-  try_ab find text "Log in" click && return 0
-  try_ab find text "Sign in" click && return 0
-  try_ab find text "Masuk" click && return 0
+  local snapshot_json submit_ref
+  snapshot_json="$(ab snapshot -i --json)" || return 1
+  submit_ref="$(printf '%s' "$snapshot_json" | node -e '
+    const fs = require("fs");
+    const payload = JSON.parse(fs.readFileSync(0, "utf8"));
+    const refs = payload?.data?.refs || {};
+    let best = "";
+    for (const [ref, meta] of Object.entries(refs)) {
+      const role = String(meta?.role || "").toLowerCase();
+      const name = String(meta?.name || "").toLowerCase();
+      if (role !== "button") continue;
+      if (name.includes("sign in") || name.includes("signin") || name.includes("login") || name.includes("log in") || name.includes("masuk")) {
+        best = "@" + ref;
+        break;
+      }
+    }
+    process.stdout.write(best);
+  ')" || true
+
+  if [[ -n "$submit_ref" ]]; then
+    ab click "$submit_ref" >/dev/null 2>&1 && return 0
+  fi
+
+  try_ab press Enter && return 0
   return 1
 }
 
@@ -66,8 +84,19 @@ ab close >/dev/null 2>&1 || true
 ab --headed open "$LOGIN_URL"
 ab wait 4000 || true
 
-if fill_username && fill_password; then
-  submit_login || true
+if ! fill_username; then
+  echo "Could not find Talenta username/email input."
+  exit 1
+fi
+
+if ! fill_password; then
+  echo "Could not find Talenta password input."
+  exit 1
+fi
+
+if ! submit_login; then
+  echo "Could not find Talenta login/masuk submit control."
+  exit 1
 fi
 
 ab wait 8000 || true
@@ -76,7 +105,7 @@ ab state save "$STATE_FILE"
 CURRENT_URL="$(ab get url | tail -n 1)"
 echo "Recovered session URL: $CURRENT_URL"
 
-if [[ "$CURRENT_URL" == *"login"* || "$CURRENT_URL" == *"signin"* || "$CURRENT_URL" == *"auth"* ]]; then
+if [[ "$CURRENT_URL" == *"login"* || "$CURRENT_URL" == *"signin"* || "$CURRENT_URL" == *"sign_in"* || "$CURRENT_URL" == *"/users/sign_in"* || "$CURRENT_URL" == *"auth"* ]]; then
   echo "Still on login/auth page. Re-run headed and complete challenge manually, then re-run this script."
   exit 1
 fi

@@ -33,15 +33,15 @@ Total score:
 ## Deterministic Rules
 
 - Confidence cap:
-  - If any cited evidence includes `evidence.incomplete`, `confidence <= 2`.
-  - If all cited evidence is `evidence.complete`, `confidence >= 3`.
+  - If any cited step has `status = incomplete`, `confidence <= 2`.
+  - If all cited steps have `status = success`, `confidence >= 3`.
 - Frequency floor:
   - Frequency score 0 when seen once.
   - Frequency score 3 when seen in >=3 runs.
   - Frequency score 5 when seen in >=6 runs.
 - Boundary rule:
-  - Default scoring scope includes deterministic evidence only.
-  - Human-assisted evidence included only when explicitly requested.
+  - Default scoring scope includes `assistance_mode = deterministic` only.
+  - Human-assisted artifacts are included only when explicitly requested.
 
 ## Priority Bands
 

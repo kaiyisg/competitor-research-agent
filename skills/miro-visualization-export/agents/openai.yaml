@@ -1,0 +1,4 @@
+interface:
+  display_name: "Miro Visualization Export"
+  short_description: "Push screenshots and tags to Miro boards."
+  default_prompt: "Use $miro-visualization-export to authenticate with Miro and export local evidence screenshots and tags to a board."

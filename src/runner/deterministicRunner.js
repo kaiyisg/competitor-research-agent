@@ -6,6 +6,24 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function buildTags({ stepTags, surfaceTag }) {
+  const input = Array.isArray(stepTags) ? [...new Set(stepTags)] : [];
+  const experienceTags = input.filter((t) => t.startsWith("experience."));
+  const finalSurfaceTag = input.find((t) => t.startsWith("surface.")) || surfaceTag || "surface.navigation";
+
+  return [...new Set([finalSurfaceTag, ...experienceTags])];
+}
+
+function mergeOptionalContext(flow, step) {
+  const keys = ["doc_section", "doc_title", "doc_target_type", "doc_target_host", "source_ref"];
+  const out = {};
+  for (const k of keys) {
+    if (step[k] !== undefined) out[k] = step[k];
+    else if (flow[k] !== undefined) out[k] = flow[k];
+  }
+  return out;
+}
+
 async function writeStepEvidence(baseDir, runId, stepId, page) {
   const screenshotsDir = path.join(baseDir, "runs", runId, "screenshots");
   const domDir = path.join(baseDir, "runs", runId, "dom");
@@ -61,6 +79,11 @@ async function runDeterministicFlow({ browser, flow, evidenceDir, assistanceMode
     try {
       action = await executeAction(page, step);
       const { screenshotRef, domSnapshotRef, textRef } = await writeStepEvidence(evidenceDir, runId, step.step_id, page);
+      const optionalContext = mergeOptionalContext(flow, step);
+      const tags = buildTags({
+        stepTags: step.tags,
+        surfaceTag: step.surface_tag || (optionalContext.doc_section ? "surface.navigation" : undefined),
+      });
 
       const artifact = {
         run_id: runId,
@@ -76,6 +99,8 @@ async function runDeterministicFlow({ browser, flow, evidenceDir, assistanceMode
         status: "success",
         assistance_mode: assistanceMode,
         text_content_ref: textRef,
+        tags,
+        ...optionalContext,
       };
 
       const ref = await writer.writeArtifact(artifact);
@@ -96,6 +121,11 @@ async function runDeterministicFlow({ browser, flow, evidenceDir, assistanceMode
         },
       };
       const failureBundleRef = await writer.writeFailureBundle(runId, segmentId, step.step_id, bundle);
+      const optionalContext = mergeOptionalContext(flow, step);
+      const tags = buildTags({
+        stepTags: step.tags,
+        surfaceTag: step.surface_tag || (optionalContext.doc_section ? "surface.navigation" : undefined),
+      });
 
       const failedArtifact = {
         run_id: runId,
@@ -112,6 +142,8 @@ async function runDeterministicFlow({ browser, flow, evidenceDir, assistanceMode
         assistance_mode: assistanceMode,
         error_message: String(error.message || error),
         failure_bundle_ref: failureBundleRef,
+        tags,
+        ...optionalContext,
       };
 
       const ref = await writer.writeArtifact(failedArtifact);

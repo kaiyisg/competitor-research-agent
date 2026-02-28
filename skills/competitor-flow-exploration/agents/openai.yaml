@@ -1,0 +1,4 @@
+interface:
+  display_name: "Competitor Flow Exploration"
+  short_description: "Iterative browser exploration with provisional tags and final dedupe"
+  default_prompt: "Use $competitor-flow-exploration to recover login, explore a user-specified flow, record provisional surface/experience tags each step, and run end-of-session dedupe + review."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gmail OTP Relay"
+  short_description: "Fetch Talenta OTP from Gmail API and submit automatically"
+  default_prompt: "Fetch the latest Talenta OTP from Gmail and submit it in the active Talenta session."

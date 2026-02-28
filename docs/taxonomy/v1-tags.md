@@ -9,14 +9,7 @@ Status: Approved for M2 indexing + downstream recommendation scoring
 
 ## Tag Groups
 
-## 1) Journey Stage
-
-Allowed values:
-- `journey.signup`
-- `journey.onboarding`
-- `journey.post_login_tour`
-
-## 2) Surface Area
+## 1) Surface Area
 
 Allowed values:
 - `surface.auth`
@@ -25,41 +18,36 @@ Allowed values:
 - `surface.checklist`
 - `surface.tooltip`
 - `surface.settings`
+- `surface.people`
 
-## 3) UX Signal
+Nested values (2-layer surface tags):
+- `surface.people.onboarding`
+- `surface.people.offboarding`
+- `surface.people.dismissed`
+- `surface.people.collaborators`
 
-Allowed values:
-- `ux.friction`
-- `ux.clarity`
-- `ux.speed`
-- `ux.trust`
-- `ux.distraction`
-
-## 4) Evidence Quality
+## 2) Experience Signal
 
 Allowed values:
-- `evidence.complete`
-- `evidence.failed_with_bundle`
-- `evidence.incomplete`
-
-## 5) Assistance Boundary
-
-Allowed values:
-- `assist.deterministic`
-- `assist.human_assisted`
+- `experience.friction`
+- `experience.clarity`
+- `experience.speed`
+- `experience.trust`
+- `experience.distraction`
 
 ## Combination Rules
 
-- Exactly one `journey.*` tag is required.
 - At least one `surface.*` tag is required.
-- Zero or more `ux.*` tags are allowed.
-- Exactly one `evidence.*` tag is required.
-- Exactly one `assist.*` tag is required.
-- `assist.deterministic` must not be used for human-assisted segments.
+- Zero or more `experience.*` tags are allowed.
+- Only `surface.*` and `experience.*` namespaces are valid.
+- Nested surface tags must use approved domain + leaf combinations.
+- For People-specific surfaces, prefer nested tags (for example `surface.people.onboarding`) over generic `surface.navigation`.
 
 ## Example Tag Sets
 
-- Signup success evidence:
-  - `journey.signup`, `surface.auth`, `ux.clarity`, `evidence.complete`, `assist.deterministic`
-- Post-login failed step:
-  - `journey.post_login_tour`, `surface.tooltip`, `ux.friction`, `evidence.failed_with_bundle`, `assist.deterministic`
+- Auth page with clear flow:
+  - `surface.auth`, `experience.clarity`
+- Tooltip interaction with friction:
+  - `surface.tooltip`, `experience.friction`
+- People onboarding page:
+  - `surface.people.onboarding`, `experience.clarity`
