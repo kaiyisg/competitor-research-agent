@@ -16,7 +16,9 @@ Fails when:
      (registry lookup). Installs from an existing lockfile skip the native gate, so this is
      the check that actually holds in CI.
 Background: litellm + axios supply-chain attacks. https://x.com/karpathy/status/2036487306585268612
-Usage: dep_policy_check.py [--root .] [--base origin/main] [--min-days 7] [--offline]
+Ratchet (--new-only, needs --base): rule 1 only flags pins that are new or changed since --base,
+for repos with a pinning backlog. Rules 2-4 always apply.
+Usage: dep_policy_check.py [--root .] [--base origin/main] [--new-only] [--min-days 7] [--offline]
 """
 import argparse, datetime as dt, json, os, re, subprocess, sys, urllib.parse, urllib.request
 
@@ -81,7 +83,11 @@ def days_from(val):
     return None
 
 
-def static_checks(root, min_days):
+def git_show(root, base, rel):
+    return subprocess.run(["git", "-C", root, "show", f"{base}:{rel}"], capture_output=True, text=True).stdout
+
+
+def static_checks(root, min_days, base=None):
     errs, ecos = [], set()
     for p in walk(root, {"package.json"}):
         rel = os.path.relpath(p, root)
@@ -92,7 +98,17 @@ def static_checks(root, min_days):
         deps = {}
         for k in ("dependencies", "devDependencies", "optionalDependencies"):
             deps.update({n: (k, v) for n, v in (pj.get(k) or {}).items()})
+        old = {}
+        if base:
+            try:
+                oj = json.loads(git_show(root, base, rel) or "{}")
+                for k in ("dependencies", "devDependencies", "optionalDependencies"):
+                    old.update(oj.get(k) or {})
+            except ValueError:
+                pass
         for n, (k, v) in sorted(deps.items()):
+            if base and old.get(n) == v:
+                continue
             if not npm_spec_ok(v):
                 errs.append(f"{rel}: {k}.{n} = {v!r} is not an exact version (use e.g. {re.sub(r'^[^0-9]*', '', v) or 'x.y.z'})")
         if deps:
@@ -112,8 +128,9 @@ def static_checks(root, min_days):
                 ecos.add((lock[1], os.path.dirname(lock[0])))
     for p in walk(root, {r"requirements.*\.txt"}):
         rel = os.path.relpath(p, root)
+        oldl = set(git_show(root, base, rel).splitlines()) if base else set()
         for i, line in enumerate(read(p).splitlines(), 1):
-            if not py_req_ok(line):
+            if line not in oldl and not py_req_ok(line):
                 errs.append(f"{rel}:{i}: {line.strip()!r} is not pinned with ==")
     for p in walk(root, {"pyproject.toml"}):
         rel, t = os.path.relpath(p, root), toml_load(p)
@@ -187,7 +204,7 @@ def age_checks(root, base, min_days):
     errs, now = [], dt.datetime.now(dt.timezone.utc)
     for p in walk(root, {"package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "uv.lock"}):
         rel = os.path.relpath(p, root)
-        old = subprocess.run(["git", "-C", root, "show", f"{base}:{rel}"], capture_output=True, text=True).stdout
+        old = git_show(root, base, rel)
         new = lock_entries(read(p), os.path.basename(p)) - lock_entries(old, os.path.basename(p))
         for pkg, ver, reg in sorted(new):
             try:
@@ -203,8 +220,11 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", default="."); ap.add_argument("--base")
     ap.add_argument("--min-days", type=int, default=7); ap.add_argument("--offline", action="store_true")
+    ap.add_argument("--new-only", action="store_true")
     a = ap.parse_args(argv)
-    errs = static_checks(a.root, a.min_days)
+    if a.new_only and not a.base:
+        ap.error("--new-only needs --base")
+    errs = static_checks(a.root, a.min_days, a.base if a.new_only else None)
     if a.base and not a.offline:
         errs += age_checks(a.root, a.base, a.min_days)
     for e in errs:

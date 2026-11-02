@@ -1,4 +1,7 @@
 import json, os, sys, tempfile, unittest
+
+for _k in [k for k in os.environ if k.startswith("GIT_")]:
+    os.environ.pop(_k)  # hooks export GIT_DIR; keep temp repos isolated
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dep_policy_check as d
 
@@ -43,6 +46,16 @@ class T(unittest.TestCase):
 
     def test_no_deps_passes(self):
         self.assertEqual(d.static_checks(mk({"package.json": json.dumps({"name": "x"})}), 7), [])
+
+    def test_new_only_ratchet(self):
+        import subprocess as sp
+        r = mk({"package.json": json.dumps({"dependencies": {"a": "^1.0.0"}}), "package-lock.json": "{}", ".npmrc": "min-release-age=7\n"})
+        g = lambda *a: sp.run(["git", "-C", r, *a], check=True, capture_output=True)
+        g("init", "-q"); g("add", "."); g("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base")
+        self.assertEqual(d.static_checks(r, 7, "HEAD"), [])
+        open(os.path.join(r, "package.json"), "w").write(json.dumps({"dependencies": {"a": "^1.0.0", "b": "~2.0.0"}}))
+        e = d.static_checks(r, 7, "HEAD")
+        self.assertEqual(len(e), 1); self.assertIn("b", e[0])
 
     def test_lock_entries(self):
         lock = json.dumps({"packages": {"": {}, "node_modules/a": {"version": "1.0.0"}, "node_modules/@s/b": {"version": "2.0.0"}}})
